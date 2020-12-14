@@ -21,11 +21,20 @@ class Device(models.Model):
         return self.name
 
 class User(models.Model):
-    name = models.CharField(max_length=150,blank=True, null=True)
     device = models.CharField(max_length=100)
+    first_name= models.CharField(max_length=150, blank=True, null=True)
+    last_name= models.CharField(max_length=150, blank=True, null=True)
+    email= models.EmailField(max_length=250, null=True, blank=True)
+    phone= models.IntegerField(blank=True, null=True)
+    address= models.CharField(max_length=250, blank=True, null=True)
+    localidad= models.CharField(max_length=150, blank=True, null=True)
+    zip_code= models.IntegerField(blank=True, null=True)
 
     def __str__(self):
-        return self.device
+        if self.first_name:
+            return f'{self.first_name} {self.last_name}'
+        else:
+            return self.device
 
 class Item(models.Model):
     title = models.CharField(max_length=150)

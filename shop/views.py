@@ -28,6 +28,7 @@ class OrderSummary(View):
         user = None
         try:
             user = User.objects.get(device=device)
+            print('user: ', user.device, user.email)
         except:
             pass
 
@@ -63,11 +64,56 @@ class CheckOut(View):
     
     def post(self, request, *args, **kwargs):
         form = CheckOutForm(request.POST or None)
+        print(request.POST)
+
+        device = request.COOKIES['device']
+
+        user = None
         if form.is_valid():
+            print(form.cleaned_data)
             print('valid form')
+            first_name = form.cleaned_data.get('first_name')
+            last_name = form.cleaned_data.get('last_name')
+            email = form.cleaned_data.get('email')
+            phone = form.cleaned_data.get('phone')
+            address = form.cleaned_data.get('address')
+            localidad = form.cleaned_data.get('localidad')
+            zip_code = form.cleaned_data.get('zip_code')
+            payment_option = form.cleaned_data.get('payment_option')
+            
+            try:
+                user = User.objects.filter(device=device).update(
+                    first_name = first_name,
+                    last_name = last_name,
+                    email = email,
+                    phone = phone,
+                    address = address,
+                    localidad = localidad,
+                    zip_code = zip_code,
+                )
+            except:
+                pass
+
+
+            return redirect('shop:checkout')
+        else:
             return redirect('shop:checkout')
 
+class Payment(View):
+    def get(self, request, *args, **kwargs):
+        device = request.COOKIES['device']
 
+        context=None
+        user = None
+        try:
+            user = User.objects.get(device=device)
+        except:
+            pass
+
+        #order
+        order = Order.objects.get(user=user, ordered=False)
+        total = order.get_total()
+        return render(request, 'shop/payment.html', {'total':total})
 
 
 

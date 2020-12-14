@@ -16,16 +16,9 @@
   
             <!--Card-->
             <div class="card">
-
-              <form>
-                {% csrf_token %}
-                {{form.as_p}}
-                <button class="btn btn-primary" type="submit" >Continue</button>
-              </form>
-  
               <!--Card content-->
-              <form class="card-body">
-  
+              <form method="POST" class="card-body">
+                {% csrf_token %}
                 <!--Grid row-->
                 <div class="row">
   
@@ -94,7 +87,7 @@
                   <div class="col-lg-4 col-md-12 mb-4">
   
                     <label for="country">Provincia</label>
-                    <select class="custom-select d-block w-100" id="country" required>
+                    <select class="custom-select d-block w-100" id="country">
                       <option value="">Buenos Aires</option>
                     </select>
                     <div class="invalid-feedback">
@@ -138,7 +131,7 @@
                 <div class="d-block my-3">
                   {% for value, name in form.fields.payment_option.choices %}
                   <div class="custom-control custom-radio">
-                    <input id="{{name}}" name="PaymentMethod" type="radio" class="custom-control-input" required>
+                    <input id="{{name}}" name="payment_option" value="{{value}}" type="radio" class="custom-control-input" required>
                     <label class="custom-control-label" for="{{name}}">{{name}}</label>
                   </div>
                   {% endfor %}
