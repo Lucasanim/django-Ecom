@@ -1,7 +1,7 @@
 from django import forms
 
 PAYMENT_CHOICES = (
-    ('MP', 'Mercado Pago'),
+    ('MP', 'Mercado_Pago'),
     ('P', 'Paypal')
 )
 

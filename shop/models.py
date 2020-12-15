@@ -44,6 +44,7 @@ class Item(models.Model):
     label = models.CharField(choices=LABEL_CHOICES, max_length=1)
     slug = models.SlugField()
     description = models.TextField()
+    image = models.ImageField()
 
     def __str__(self):
         return self.title
@@ -98,8 +99,13 @@ class Order(models.Model):
 
     ordered = models.BooleanField(default=False)
 
+    payment = models.ForeignKey('Payments', on_delete=models.SET_NULL, blank=True, null=True)
+
     def __str__(self):
-        return self.user.device
+        if self.user.first_name:
+            return self.user.first_name
+        else:
+            return self.user.device
 
     def get_total(self):
         total = 0
@@ -107,3 +113,13 @@ class Order(models.Model):
             total += order_item.get_final_price()
         return total
 
+class Payments(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    amount = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        if self.user.first_name:
+            return self.user.first_name
+        else:
+            return self.user.device

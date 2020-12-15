@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import TemplateView, View, ListView, DetailView
-from .models import Item, Order, OrderItem, Device, User
+from .models import Item, Order, OrderItem, Device, User, Payments
 from django.utils import timezone
 from django.shortcuts import redirect
 
@@ -93,10 +93,16 @@ class CheckOut(View):
                 )
             except:
                 pass
-
-
-            return redirect('shop:checkout')
+            
+            if payment_option == 'P':
+                return redirect('shop:payment', payment_option="Paypal")
+            elif payment_option =='MP':
+                return redirect('shop:payment', payment_option="Mercado_Pago")
+            else:
+                messages.warning(request, "Invalid payment option.")
+                return redirect('shop:checkout')    
         else:
+            messages.warning(request, 'Invalid form.')
             return redirect('shop:checkout')
 
 class Payment(View):
@@ -113,8 +119,42 @@ class Payment(View):
         #order
         order = Order.objects.get(user=user, ordered=False)
         total = order.get_total()
-        return render(request, 'shop/payment.html', {'total':total})
+        return render(request, 'shop/payment.html', {'total':total, 'order':order})
 
+class Payment_aproved(View):
+    def get(self, request, *args, **kwargs):
+        device = request.COOKIES['device']
+        user = None
+        amount = None
+        try:
+            user = User.objects.get(device=device)
+        except:
+            messages.error(request,'Error validating your payment. Please contact us.')
+            return redirect('shop:home')
+        if user:
+                
+            order = Order.objects.get(user=user, ordered=False)
+            amount = order.get_total()
+
+            #create the payment
+            payment = Payments()
+            payment.user = user
+            payment.amount = amount
+            payment.save()
+
+            #assign the payment to the order
+            order.ordered = True
+            order.payment = payment
+            order.save()
+    
+            messages.success(request,'Payment successfully.')
+
+            return redirect('shop:home')
+
+        else:
+            messages.error(request,'Error validating your payment. Please contact us.')
+            return redirect('shop:home')
+        
 
 
 def add_to_cart(request, slug):

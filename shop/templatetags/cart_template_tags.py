@@ -18,4 +18,3 @@ def cart_item_count(request):
             return qs[0].items.count()
     else:
         return 0
-
