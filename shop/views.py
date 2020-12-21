@@ -2,11 +2,11 @@ from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import TemplateView, View, ListView, DetailView
-from .models import Item, Order, OrderItem, Device, User, Payments
+from .models import Item, Order, OrderItem, Device, User, Payments, Cupon
 from django.utils import timezone
 from django.shortcuts import redirect
 
-from .forms import CheckOutForm
+from .forms import CheckOutForm, CuponForm
 # Create your views here.
 
 class home(ListView):
@@ -55,12 +55,30 @@ class ProductDetail(DetailView):
 class CheckOut(View):
     def get(self, request, *args, **kwargs):
 
-        form = CheckOutForm()
-        context = {
-            'form':form
-        }
+        device = request.COOKIES['device']
+        order = None
+        user = None
+        try:
+            user = User.objects.get(device=device)
+        except:
+            pass
+        try:
+            order = Order.objects.get(user=user, ordered=False)
+            
+            form = CheckOutForm()
+            context = {
+                'form':form,
+                'order': order,
+                'cuponform':CuponForm()
+            }
 
-        return render(request, 'shop/checkout-page.html', context)
+            return render(request, 'shop/checkout-page.html', context)
+        
+        except ObjectDoesNotExist:
+            messages.info(request, 'You have not an active order.')
+            return redirect('shop:checkout')
+
+        
     
     def post(self, request, *args, **kwargs):
         form = CheckOutForm(request.POST or None)
@@ -119,7 +137,11 @@ class Payment(View):
         #order
         order = Order.objects.get(user=user, ordered=False)
         total = order.get_total()
-        return render(request, 'shop/payment.html', {'total':total, 'order':order})
+        if user and order.user.first_name:
+            return render(request, 'shop/payment.html', {'total':total, 'order':order})
+        else:
+            messages.error(request, 'JYou have not added you information.')
+            return redirect('shop:checkout')
 
 class Payment_aproved(View):
     def get(self, request, *args, **kwargs):
@@ -141,6 +163,12 @@ class Payment_aproved(View):
             payment.user = user
             payment.amount = amount
             payment.save()
+
+            #Clear order items
+            order_items = order.items.all()
+            order_items.update(ordered=True)
+            for item in order_items:
+                item.save()
 
             #assign the payment to the order
             order.ordered = True
@@ -290,3 +318,41 @@ def remove_single_item_from_cart(request, slug):
         return redirect('shop:detail', slug=slug)
 
 
+def get_cupon(request, code):
+    try:
+        cupon = Cupon.objects.get(code=code)
+        return cupon
+    except ObjectDoesNotExist:
+        messages.info(request, 'This cupon does not exist.')
+        return redirect('shop:checkout')
+
+
+def add_cupon(request):
+
+    if request.method == 'POST':
+        form = CuponForm(request.POST or None)
+
+        if form.is_valid():
+
+            device = request.COOKIES['device']
+            print('devide: ', device)
+
+            user = None
+            try:
+                user = User.objects.get(device=device)
+            except:
+                pass
+            try:
+                code = form.cleaned_data.get('code')
+                order = Order.objects.get(user=user, ordered=False)
+
+                order.cupon = get_cupon(request, code)
+                order.save()
+                messages.success(request, 'Cupon added correctly!')
+                return redirect('shop:checkout')
+            
+            except ObjectDoesNotExist:
+                messages.info(request, 'You have not an active order.')
+                return redirect('shop:checkout')
+    else:
+        return None

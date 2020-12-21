@@ -53,6 +53,13 @@
 
             {% endfor %}
 
+            {% if object.cupon %}
+                <tr>
+                    <td colspan="4" ><b>Coupon</b></td>
+                    <td><b>-${{object.cupon.amount}}</b></td>
+                </tr>
+            {% endif %}
+                
             {% if object.get_total %}
 
                 <tr>

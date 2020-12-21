@@ -101,6 +101,10 @@ class Order(models.Model):
 
     payment = models.ForeignKey('Payments', on_delete=models.SET_NULL, blank=True, null=True)
 
+    cupon = models.ForeignKey('Cupon', on_delete=models.SET_NULL, blank=True, null=True)
+
+    received = models.BooleanField(default=False)
+
     def __str__(self):
         if self.user.first_name:
             return self.user.first_name
@@ -111,6 +115,9 @@ class Order(models.Model):
         total = 0
         for order_item in self.items.all():
             total += order_item.get_final_price()
+
+        if self.cupon:
+            total -= self.cupon.amount
         return total
 
 class Payments(models.Model):
@@ -123,3 +130,10 @@ class Payments(models.Model):
             return self.user.first_name
         else:
             return self.user.device
+
+class Cupon(models.Model):
+    code = models.CharField(max_length=15)
+    amount = models.FloatField()
+
+    def __str__(self):
+        return self.code
